@@ -9,8 +9,10 @@ class UserSchema(BaseModel):
 
 
 class AddressSchema(BaseModel):
+    id: int
+    user_id: int
     country: str
     city: str
     street: str
-    postal_code: str
+    zip_code: str
 

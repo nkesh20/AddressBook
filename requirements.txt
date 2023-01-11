@@ -3,3 +3,5 @@ Flask-Pydantic
 flask
 pydantic
 psycopg2-binary
+sqlalchemy
+flask_jwt_extended
