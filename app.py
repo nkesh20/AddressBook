@@ -1,9 +1,9 @@
 from flask import Flask
 from flask import request, jsonify
-from schemas import UserSchema, AddressSchema
+from schemas import UserSchema, AddressSchema, LoginSchema
 from database import db, User, create_database
 from sqlalchemy.exc import IntegrityError
-from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
+from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity, create_refresh_token
 
 
 app = Flask(__name__)
@@ -18,15 +18,9 @@ with app.app_context():
 
 @app.route('/register', methods=["POST"])
 def sign_up():
-    data = request.json
-    user = UserSchema(**data)
-    email = user.email
-    password = user.password
-    first_name = user.first_name
-    last_name = user.last_name
-
-    user = User(email, password, first_name, last_name)
-
+    raw_data = request.json
+    data = UserSchema(**raw_data)
+    user = User(**raw_data)
     try:
         db.session.add(user)
         db.session.commit()
@@ -39,13 +33,15 @@ def sign_up():
 
 @app.route('/login', methods=["GET"])
 def login():
-    data = request.get_json()
-    email = data["email"]
-    password = data["password"]
+    login_data = LoginSchema(**request.json)
+    email = login_data.email
+    password = login_data.password
     user = User.query.filter_by(email=email).first()
     if user and user.verify_password(password):
         access_token = create_access_token(identity=email)
-        return {"access_token": access_token}, 200
+        refresh_token = create_refresh_token(identity=email)
+        return {"access_token": access_token,
+                "refresh_token": refresh_token}, 200
 
     return {"error": "Invalid email or password"}, 401
 
@@ -57,11 +53,8 @@ def add_address():
     user = User.query.filter_by(email=current_user_email).first()
     if user:
         data = request.json
-        country = data['country']
-        city = data['city']
-        street = data['street']
-        zip_code = data['zip_code']
-        user.add_address(country, city, street, zip_code)
+        address = AddressSchema(**data)
+        user.add_address(**data)
         return {"message": "Address added successfully"}, 201
     return {"error": "Invalid User"}, 400
 
@@ -73,11 +66,8 @@ def update_address(address_id: int):
     user = User.query.filter_by(email=current_user_email).first()
     if user:
         data = request.json
-        country = data['country']
-        city = data['city']
-        street = data['street']
-        zip_code = data.get('zip_code')
-        user.update_address(address_id, country, city, street, zip_code)
+        address = AddressSchema(**data)
+        user.update_address(address_id, **data)
         return {"message": "Address updated successfully"}, 200
     return {"error": "Invalid User or Address ID"}, 400
 

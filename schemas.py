@@ -9,10 +9,12 @@ class UserSchema(BaseModel):
 
 
 class AddressSchema(BaseModel):
-    id: int
-    user_id: int
     country: str
     city: str
     street: str
     zip_code: str
 
+
+class LoginSchema(BaseModel):
+    email: constr(min_length=3, max_length=30)
+    password: constr(min_length=3, max_length=20)
